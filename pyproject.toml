@@ -1,0 +1,9 @@
+[project]
+name = "vuln-atlas"
+version = "0.1.0"
+description = "Offline, agent-first vulnerability knowledge base"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0"]
+
+[project.scripts]
+vuln-atlas = "vuln_atlas.cli:main"

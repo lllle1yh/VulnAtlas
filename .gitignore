@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# local dataset snapshots and generated indexes
+raw/
+artifacts/*
+!artifacts/.gitkeep
+cards/*
+!cards/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+*.npy
+
+# local editor/os files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
