@@ -13,6 +13,20 @@ VulnAtlas 是一个**离线、轻量、面向安全 Agent 的漏洞知识库**�
 - **轻量**：SQLite FTS5（trigram + 中文 bigram）+ BM25 加权，无向量库、无外部数据库。
 - **可审计**：每张卡保留来源、license、置信度、最后验证时间；数据源快照记录在 `kb/manifest.json`。
 
+## 当前状态
+
+当前索引 19,970 张卡，按置信度分布：
+
+```text
+verified    4        实战验证过，可照步骤复现
+candidate   12,122   有来源（Nuclei/ExploitDB/MSF/Vulhub），待验证
+unverified  7,844    只有 NVD / GitHub 仓库元数据，仅作线索
+```
+
+其中 4,003 张带本地 Nuclei 模板实体，3,611 张有 ExploitDB 编号指针，885 张带 Metasploit module 路径。
+
+说清楚一点：这个库的主力价值是**检索和定向**，不是"每张卡都能直接打"。`confidence=verified` 的卡才当作复现依据，其余按待验证假设用。
+
 ## 工作方式
 
 ```text
@@ -101,7 +115,9 @@ pip install -e ".[dev]"
 
 ## 快速开始
 
-知识库成品在 `kb/`：`kb/index.db`（主索引）、`kb/cards/`（Markdown 卡）、`kb/artifacts/`（本地 POC）、`kb/manifest.json`（数据源清单）。
+运行时只依赖 `kb/` 下的四样东西：`kb/index.db`（主索引）、`kb/cards/`（Markdown 卡）、`kb/artifacts/`（本地 POC）、`kb/manifest.json`（数据源清单）。
+
+> 仓库不随代码分发索引和卡片数据（体积 + 部分数据源 license 不允许再分发）。克隆后 `kb/` 只有 `manifest.json` 和两个占位文件，需要按下面的「构建知识库」在本地生成。
 
 ```bash
 # 查询
@@ -126,11 +142,38 @@ VULN_ATLAS_KB=/path/to/kb      # 默认 <repo>/kb，poc_path 相对它解析
 VULN_ATLAS_DB=/path/to/index.db
 ```
 
-重建索引（从 `kb/cards/*.md`）：
+## 构建知识库
+
+两条路径：
+
+**1. 已有卡片，只建索引**（`kb/cards/*.md` 已存在）：
 
 ```bash
-python -m vuln_atlas ingest --help
+python -m vuln_atlas ingest              # cards/*.md -> index.db
+python -m vuln_atlas validate            # 离线校验卡片（结构/体积/敏感串），不写库
 ```
+
+**2. 从原始快照全量构建卡片**：先把各数据源快照放进 `kb/raw/<source>/`，再跑 ingest 管线：
+
+```text
+kb/raw/nvd/            nvdcve-2.0-*.json.gz        必需（产卡主体）
+kb/raw/kev/            known_exploited_vulnerabilities.json
+kb/raw/epss/           epss_scores-*.csv.gz
+kb/raw/exploitdb/      files_exploits.csv
+kb/raw/nuclei/         nuclei-templates/http/cves/
+kb/raw/metasploit/     module 索引
+kb/raw/github-poc/     PoC-in-GitHub 元数据
+kb/raw/vulhub/         vulhub README 快照
+kb/raw/payloads/       PayloadsAllTheThings Markdown 快照
+```
+
+```bash
+python -m vuln_atlas.ingest.pipeline --help
+```
+
+管线依次做：解析各源草稿 → 按 CVE 合并 → 脱敏扫描（内嵌密码/token/私钥的卡上线前丢弃）→ 保留策略（近 N 年 + 有 POC/KEV/高 EPSS）→ 写 `kb/cards/` 与 `kb/artifacts/` → 建索引，并把每源的 ok/partial/unavailable 及原因写回 `kb/manifest.json`。
+
+注意：`kb/raw/` 也在 `.gitignore` 里，原始快照不入库。
 
 ## MCP
 
@@ -221,15 +264,34 @@ tests/              pytest
 
 ## 数据来源
 
-`kb/manifest.json` 记录每份快照的 URL、抓取时间、sha256、bytes、license、是否可再分发。当前版本包含：
+`kb/manifest.json` 记录每份快照的 URL、抓取时间、sha256、bytes、license、是否可再分发。
 
-- NVD CVE（2016–2026 全量）
-- CISA KEV、FIRST EPSS、CWE
-- ExploitDB（CSV 映射）、Nuclei Templates（cves）、Metasploit（module 索引）、getsploit
-- PoC-in-GitHub、Vulhub
-- PayloadsAllTheThings
-- 授权整理的中文技术文章
-- 实战验证卡
+已实现解析、参与产卡/加权的源：
+
+| 源 | 用途 | 状态 |
+|---|---|---|
+| NVD CVE（2016–2026 快照） | 卡片主体、版本、CWE | ok |
+| CISA KEV | 已被利用标记，直接提升置信度 | ok |
+| FIRST EPSS | 保留策略与排序加权 | ok |
+| ExploitDB（CSV 映射） | EDB 编号指针 | ok |
+| Nuclei Templates（cves） | 可执行模板实体 | ok |
+| Metasploit | module 路径 / `use` 指令 | ok |
+| PoC-in-GitHub | 仓库元数据，仅作线索 | ok |
+| Vulhub | README 步骤 | ok |
+| PayloadsAllTheThings | 手法 Markdown 摘录 | ok |
+| CWE | 只取标签，不单独产卡 | partial |
+
+未接入的源在 `kb/manifest.json` 里写明原因，不会假装存在：
+
+```text
+getsploit                依赖 Vulners 商业离线库，未取得授权
+trickest                 无快照
+HackTricks               CC BY-NC，再分发范围待人工确认
+InternalAllTheThings     仓库已迁移且无 license 声明
+先知（xianzhi）           无稳定公开 API，需授权导出
+本机 knowledges           无快照
+实战验证卡                需实验侧导出
+```
 
 入库策略按数据量裁剪：全部 CVE 合并后按 EPSS、年份与目标卡片数筛选，保证索引体积与查询延迟可控。
 
