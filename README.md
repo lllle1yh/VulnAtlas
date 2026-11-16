@@ -1,66 +1,219 @@
 # VulnAtlas
 
-VulnAtlas 是一个**离线、轻量、面向安全 Agent 的漏洞知识库**。
+[![tests](https://img.shields.io/badge/tests-38%20passed-brightgreen)](#development)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue)](#requirements)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-它把每个 CVE/漏洞整理成一张可直接使用的卡：目标指纹、影响版本、POC、最小利用步骤、预期 marker 和置信度都在同一张卡里。运行时只需要一个本地 SQLite 文件和两个只读 MCP 工具，不联网、不用 embedding、不需要额外服务。
+> Offline, lightweight vulnerability knowledge base for security agents.
 
-## 设计目标
+VulnAtlas turns each CVE into a single self-contained card: target fingerprint, affected versions,
+exploit steps, expected markers, POC code or a local POC file, and a confidence level — all in one
+Markdown file plus a local SQLite index. It runs with no network access, no vector database and no
+external services.
 
-- **离线可用**：断网或内网环境里照样能查 CVE 和 POC。
-- **一张卡解决一个漏洞**：CVE 元数据和 POC 不拆成两套库，查到就能用。
-- **为 Agent 设计**：`wiki_search` 可以直接接收 HTTP 请求 / 响应头 / curl / nmap 原文，由服务端抽取 CVE、组件、版本、指纹；模型不用自己拼检索语法。
-- **按可执行性分级**：`verified` / `candidate` / `unverified` 三级，Agent 一眼知道这张卡能不能当复现依据。
-- **轻量**：SQLite FTS5（trigram + 中文 bigram）+ BM25 加权，无向量库、无外部数据库。
-- **可审计**：每张卡保留来源、license、置信度、最后验证时间；数据源快照记录在 `kb/manifest.json`。
-
-## 当前状态
-
-当前索引 19,970 张卡，按置信度分布：
-
-```text
-verified    4        实战验证过，可照步骤复现
-candidate   12,122   有来源（Nuclei/ExploitDB/MSF/Vulhub），待验证
-unverified  7,844    只有 NVD / GitHub 仓库元数据，仅作线索
 ```
-
-其中 4,003 张带本地 Nuclei 模板实体，3,611 张有 ExploitDB 编号指针，885 张带 Metasploit module 路径。
-
-说清楚一点：这个库的主力价值是**检索和定向**，不是"每张卡都能直接打"。`confidence=verified` 的卡才当作复现依据，其余按待验证假设用。
-
-## 工作方式
-
-```text
 NVD / KEV / EPSS / CWE / ExploitDB / Nuclei / Metasploit /
-PoC-in-GitHub / Vulhub / PayloadsAllTheThings / 实战验证卡
+PoC-in-GitHub / Vulhub / PayloadsAllTheThings / verified cards
                         │
                         ▼
-                   ingest 管线
-            （合并 → 过滤 → 脱敏 → 写卡）
+                   ingest pipeline  (parse → merge → sanitize → write)
                         │
                         ▼
-          Markdown 卡 + 本地 POC artifacts
+          Markdown cards  +  local POC artifacts (kb/artifacts)
                         │
                         ▼
-             SQLite FTS5 索引 (kb/index.db)
+             SQLite FTS5 index  (kb/index.db)
                         │
-              ┌─────────┼─────────┐
-              ▼         ▼         ▼
-            MCP        CLI      Web UI
+           ┌────────────┼────────────┐
+           ▼            ▼            ▼
+         MCP           CLI         Web UI
 ```
 
-检索顺序：
+## Features
 
-1. CVE 精确命中
-2. 产品 + 版本结构化过滤（版本区间不匹配的直接排除）
-3. 指纹匹配（响应头、路径片段）
-4. 概念/标签扩展（中文「本地文件包含」→ `lfi`）
-5. FTS5 + BM25 兜底
+- **Offline by default.** Every URL referenced during ingest is either stripped or replaced by a
+  local artifact; a card never needs the internet to be useful.
+- **One card per vulnerability.** CVE metadata and its POC are not split into separate stores.
+  Query a CVE and you get the exploit.
+- **Agent-first query interface.** `wiki_search` accepts raw HTTP requests, response headers, `curl`
+  and `nmap` output and extracts CVE, product, version and fingerprints server-side.
+- **Confidence levels.** `verified` / `candidate` / `unverified` so an agent knows whether a card is
+  a reproduction recipe or just a lead.
+- **No embeddings.** SQLite FTS5 (trigram index + a Chinese bigram index) with BM25 and structured
+  boosts. Index building is deterministic and cheap.
+- **Auditable.** Every card records its sources, license and verification date; every upstream
+  snapshot is recorded in `kb/manifest.json` with URL, sha256 and redistribution status.
+- **Read-only MCP.** Two tools, no write capability.
 
-每条结果带 `why` 字段说明为什么命中，如 `cve_exact`、`product+version_match`、`fingerprint`、`tag:lfi`、`fts`。
+## Architecture
 
-## 卡片
+| Module | Responsibility |
+|---|---|
+| `vuln_atlas/card.py` | Card model, frontmatter parsing, size limits, secret scanning |
+| `vuln_atlas/db.py` | SQLite schema, FTS5 tables, Chinese bigram index, upsert |
+| `vuln_atlas/router.py` | Raw request → structured `Query` |
+| `vuln_atlas/rank.py` | Recall, weighted ranking, result trimming |
+| `vuln_atlas/version.py` | Version-range matching |
+| `vuln_atlas/fingerprint.py` | Product/vendor → fingerprint derivation |
+| `vuln_atlas/indexer.py` | `cards/*.md` → `index.db` |
+| `vuln_atlas/maintenance.py` | `check` (consistency report) and `repair` (in-place fixes) |
+| `vuln_atlas/ingest/` | Source parsers and the build pipeline |
+| `vuln_atlas/cli.py` | CLI |
+| `vuln_atlas/mcp_server.py` | MCP stdio server |
+| `web_app.py`, `web/index.html` | Local read-only web UI |
 
-一个漏洞一张卡。正文固定六段：目标特征 / 版本、前置条件、最小步骤、预期 marker、证据指针、失败模式 / 不适用条件。
+Retrieval order:
+
+1. exact CVE match
+2. structured product + version filter (out-of-range versions are dropped)
+3. fingerprint match (response headers, path fragments)
+4. concept/tag expansion (e.g. `本地文件包含` → `lfi`)
+5. FTS5 + BM25 fallback
+
+Every result carries a `why` field (`cve_exact`, `product+version_match`, `fingerprint`, `tag:lfi`,
+`fts`, …) and a score, so ranking decisions are explainable.
+
+## Requirements
+
+- Python 3.10+
+- SQLite with FTS5 enabled (the bundled CPython build has it)
+- PyYAML optional — a built-in frontmatter parser is used when it is absent
+
+## Installation
+
+```bash
+git clone <repo-url> vuln-atlas
+cd vuln-atlas
+
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+The repository ships without index data. Create `kb/` as described in
+[Building the knowledge base](#building-the-knowledge-base).
+
+## Usage
+
+Runtime needs only four paths under `kb/`:
+
+```text
+kb/index.db        SQLite index (read-only at query time)
+kb/cards/          Markdown cards
+kb/artifacts/      Local POC files referenced by poc_path
+kb/manifest.json   upstream snapshot manifest
+```
+
+### CLI
+
+```bash
+# by CVE
+python -m vuln_atlas search --cve CVE-2021-44228
+
+# by product and version
+python -m vuln_atlas search --product tomcat --version 9.0.20
+
+# by raw request (server-side parsing)
+python -m vuln_atlas search --request "GET /assets/file:%2f%2f/etc/passwd HTTP/1.1
+Host: TARGET
+X-Runtime: 0.02"
+
+# free text, Chinese or English
+python -m vuln_atlas search --query "Rails 本地文件包含怎么打"
+
+# full card
+python -m vuln_atlas get CVE-2018-3760
+python -m vuln_atlas get CVE-2018-3760 --raw     # raw Markdown
+
+# statistics
+python -m vuln_atlas stats
+```
+
+Paths can be overridden with environment variables:
+
+```bash
+VULN_ATLAS_KB=/path/to/kb      # default <repo>/kb; poc_path is resolved relative to it
+VULN_ATLAS_DB=/path/to/index.db
+```
+
+### MCP server
+
+The server exposes two read-only tools:
+
+```text
+wiki_search(query, request, product, version, cve, tags, top_k=5)
+wiki_get(id)
+```
+
+Copy [`mcp.example.json`](mcp.example.json), replace `<repo>`, and add it to your client
+configuration:
+
+```json
+{
+  "mcpServers": {
+    "vuln-atlas": {
+      "command": "python3",
+      "args": ["<repo>/mcp_server.py"],
+      "env": {
+        "VULN_ATLAS_DB": "<repo>/kb/index.db",
+        "VULN_ATLAS_KB": "<repo>/kb"
+      }
+    }
+  }
+}
+```
+
+`wiki_search` result:
+
+```json
+{
+  "results": [
+    {
+      "id": "CVE-2018-3760",
+      "title": "Rails Sprockets 二次解码路径穿越（任意文件读取）",
+      "score": 1112.75,
+      "confidence": "verified",
+      "why": "cve_exact",
+      "snippet": "≤300 character excerpt",
+      "poc_type": "curl",
+      "poc_path": "artifacts/CVE-2018-3760/README.md"
+    }
+  ],
+  "query": {"cve": null, "product": "sprockets", "fingerprint": ["x-runtime"]},
+  "untrusted": true
+}
+```
+
+`wiki_get` returns the whole card (six body sections + `steps` + `marker` + `poc_path`), capped at
+8 KB with `truncated: true` when trimmed. An empty query returns `suggested_queries`.
+
+### Web UI
+
+```bash
+python web_app.py --port 8765        # uses VULN_ATLAS_DB or <repo>/kb/index.db
+```
+
+Open `http://127.0.0.1:8765/`. Type a CVE, a component or a Chinese description, or paste a raw
+request/response (Ctrl+Enter to search). Results on the left, card on the right, including `why`,
+`poc_code`, steps, marker and body.
+
+### Agent skill
+
+[`skills/SKILL.md`](skills/SKILL.md) documents how to *use* the card library: when to call
+`wiki_search`, what each parameter means, how to read `confidence` / `why` / `poc_path`, and how to
+pivot when a query returns nothing. Inject it into a worker/planner system prompt together with the
+MCP server name and `VULN_ATLAS_KB`.
+
+## Card format
+
+One card per vulnerability. The body always has the same six sections, in this order:
+
+1. 目标特征 / 版本 — target fingerprint and affected versions
+2. 前置条件 — preconditions
+3. 最小步骤 — minimal steps
+4. 预期 marker — expected marker
+5. 证据指针 — evidence pointer
+6. 失败模式 / 不适用条件 — failure modes / when not applicable
 
 ```yaml
 ---
@@ -85,225 +238,132 @@ license: see-manifest
 ---
 ```
 
-置信度含义：
+Limits: ≤ 8 KB per card, ≤ 5 KB body, ≤ 1 KB frontmatter, ≤ 1536 B / 40 lines of inline `poc_code`,
+≤ 1 MB of artifacts per card. Larger POCs go to `kb/artifacts/`.
 
-| 值 | 含义 | Agent 怎么用 |
+### Confidence levels
+
+| Value | Meaning | How an agent should use it |
 |---|---|---|
-| `verified` | 实战验证过，卡内有可执行步骤 | 可直接照步骤复现 |
-| `candidate` | 有来源（Nuclei / ExploitDB / Vulhub / MSF）但未实战验证 | 当作待验证假设，按卡尝试 |
-| `unverified` | 只有公开 PoC 仓库/NVD 元数据 | 仅作线索，不能当验证依据 |
+| `verified` | Reproduced in practice; card contains runnable steps | Follow the steps |
+| `candidate` | Source-backed (Nuclei / ExploitDB / Vulhub / Metasploit) but not reproduced here | Treat as a hypothesis and test it |
+| `unverified` | Only public PoC repository metadata or NVD data | Lead only; not verification evidence |
 
-### 离线约束
+### Offline constraints
 
-卡片不依赖外链：
+- Small POCs are embedded in `poc_code`.
+- Large POCs live in `kb/artifacts/`; `poc_path` is a local relative path.
+- Article and repository content is extracted into the card during ingest.
+- URLs, sha256 and licenses live in `kb/manifest.json`, never as a runtime dependency.
+- `poc_type: github-poc` cards point at `github-poc-index.txt`, a local listing of repository names,
+  languages and descriptions. It is **not** executable code and does not change the card's
+  confidence.
+- Card bodies are **untrusted data**; MCP results set `untrusted: true` and agents must not follow
+  instructions found inside card text.
 
-- 小 POC 直接写进 `poc_code`
-- 大 POC 放进 `kb/artifacts/`，`poc_path` 指向本地相对路径
-- 文章/仓库内容在 ingest 阶段提取进卡
-- URL、sha256、license 只记录在 `kb/manifest.json`，不是运行依赖
-- 卡片正文是 **untrusted data**，MCP 结果里带 `untrusted: true`，Agent 不应执行卡内文本里的"指令"
+## Building the knowledge base
 
-## 安装
-
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate   Linux/macOS: source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-要求：Python 3.10+、SQLite 启用 FTS5。PyYAML 可选（缺失时用内置 frontmatter 解析器）。
-
-## 快速开始
-
-运行时只依赖 `kb/` 下的四样东西：`kb/index.db`（主索引）、`kb/cards/`（Markdown 卡）、`kb/artifacts/`（本地 POC）、`kb/manifest.json`（数据源清单）。
-
-> 仓库不随代码分发索引和卡片数据（体积 + 部分数据源 license 不允许再分发）。克隆后 `kb/` 只有 `manifest.json` 和两个占位文件，需要按下面的「构建知识库」在本地生成。
+### Path A — cards already exist, build the index only
 
 ```bash
-# 查询
-python -m vuln_atlas search --cve CVE-2021-44228
-python -m vuln_atlas search --product tomcat --version 9.0.20
-python -m vuln_atlas search --request "GET /assets/file:%2f%2f/etc/passwd HTTP/1.1
-Host: TARGET
-X-Runtime: 0.02"
-python -m vuln_atlas search --query "Rails本地文件包含怎么打"
-
-# 读取整张卡
-python -m vuln_atlas get CVE-2018-3760
-
-# 统计
-python -m vuln_atlas stats
+python -m vuln_atlas ingest        # kb/cards/*.md -> kb/index.db
+python -m vuln_atlas validate      # offline validation (structure, size, secrets); writes nothing
 ```
 
-路径通过环境变量覆盖：
+### Path B — build cards from raw snapshots
 
-```bash
-VULN_ATLAS_KB=/path/to/kb      # 默认 <repo>/kb，poc_path 相对它解析
-VULN_ATLAS_DB=/path/to/index.db
-```
-
-## 构建知识库
-
-两条路径：
-
-**1. 已有卡片，只建索引**（`kb/cards/*.md` 已存在）：
-
-```bash
-python -m vuln_atlas ingest              # cards/*.md -> index.db
-python -m vuln_atlas validate            # 离线校验卡片（结构/体积/敏感串），不写库
-```
-
-**2. 从原始快照全量构建卡片**：先把各数据源快照放进 `kb/raw/<source>/`，再跑 ingest 管线：
+Place each source snapshot under `kb/raw/<source>/`:
 
 ```text
-kb/raw/nvd/            nvdcve-2.0-*.json.gz        必需（产卡主体）
+kb/raw/nvd/            nvdcve-2.0-*.json.gz         required (main card source)
 kb/raw/kev/            known_exploited_vulnerabilities.json
 kb/raw/epss/           epss_scores-*.csv.gz
 kb/raw/exploitdb/      files_exploits.csv
 kb/raw/nuclei/         nuclei-templates/http/cves/
-kb/raw/metasploit/     module 索引
-kb/raw/github-poc/     PoC-in-GitHub 元数据
-kb/raw/vulhub/         vulhub README 快照
-kb/raw/payloads/       PayloadsAllTheThings Markdown 快照
+kb/raw/metasploit/     module index
+kb/raw/github-poc/     PoC-in-GitHub metadata
+kb/raw/vulhub/         vulhub README snapshots
+kb/raw/payloads/       PayloadsAllTheThings Markdown snapshots
 ```
 
 ```bash
 python -m vuln_atlas.ingest.pipeline --help
 ```
 
-管线依次做：解析各源草稿 → 按 CVE 合并 → 脱敏扫描（内嵌密码/token/私钥的卡上线前丢弃）→ 保留策略（近 N 年 + 有 POC/KEV/高 EPSS）→ 写 `kb/cards/` 与 `kb/artifacts/` → 建索引，并把每源的 ok/partial/unavailable 及原因写回 `kb/manifest.json`。
+The pipeline parses every source into drafts, merges by CVE, scans for secrets (cards with real
+embedded credentials are dropped), applies the retention policy (recent years plus POC/KEV/high
+EPSS), writes `kb/cards/` and `kb/artifacts/`, builds the index, and records each source's
+`ok` / `partial` / `unavailable` status with a reason in `kb/manifest.json`. `kb/raw/` is ignored by
+git.
 
-注意：`kb/raw/` 也在 `.gitignore` 里，原始快照不入库。
-
-## MCP
-
-只暴露两个只读工具，无写入能力。
-
-```text
-wiki_search(query, request, product, version, cve, tags, top_k=5)
-wiki_get(id)
-```
-
-客户端配置：
-
-```json
-{
-  "mcpServers": {
-    "vuln-atlas": {
-      "command": "python3",
-      "args": ["<repo>/mcp_server.py"],
-      "env": {
-        "VULN_ATLAS_DB": "<repo>/kb/index.db",
-        "VULN_ATLAS_KB": "<repo>/kb"
-      }
-    }
-  }
-}
-```
-
-`wiki_search` 返回示例：
-
-```json
-{
-  "results": [
-    {
-      "id": "CVE-2018-3760",
-      "title": "Rails Sprockets 二次解码路径穿越（任意文件读取）",
-      "score": 1112.75,
-      "confidence": "verified",
-      "why": "cve_exact",
-      "snippet": "≤300 字符摘要",
-      "poc_type": "curl",
-      "poc_path": "artifacts/CVE-2018-3760/README.md"
-    }
-  ],
-  "query": {"cve": null, "product": "sprockets", "fingerprint": ["x-runtime"]},
-  "untrusted": true
-}
-```
-
-`wiki_get` 返回整张卡（正文六段 + steps + marker + poc_path），单次 ≤ 8KB，超出时 `truncated: true` 并按 body → poc_code → 指纹顺序裁剪。查询为空时返回 `suggested_queries`。
-
-## Skill
-
-`skills/SKILL.md` 是给 Agent 的使用说明，内容只讲**怎么查卡、怎么读结果**：什么时候调 `wiki_search`、每个参数填什么、`confidence` / `why` / `poc_path` 怎么用、空结果怎么换维度、引用与注入规则。它教的是用卡片库，不教做题。
-
-接入方式：把 `skills/SKILL.md` 内容注入 worker/planner 的 system prompt，同时注入 MCP 地址（`vuln-atlas`）与 `VULN_ATLAS_KB` 路径。
-
-## 本地 Web UI
+### Maintaining an existing KB
 
 ```bash
-python web_app.py --port 8765            # 默认 VULN_ATLAS_DB 或 <repo>/kb/index.db
+python -m vuln_atlas check                       # report DB / cards consistency (exit 2 if inconsistent)
+python -m vuln_atlas repair                      # dry run: show how many cards would change
+python -m vuln_atlas repair --apply              # retitle low-information titles, link metadata
+                                                 # artifacts, export missing md, sync concepts
+python -m vuln_atlas repair --apply --sync-md    # also rewrite md whose content drifted from the DB
 ```
 
-打开 `http://127.0.0.1:8765/`：可以输入 CVE、组件、中文描述，也可以直接贴请求/响应原文（Ctrl+Enter 搜索）；左侧结果、右侧卡片，显示 `why`、`poc_code`、最小步骤、marker、正文。
+`check` reports, among others:
 
-## 目录
+- `db_cards` / `md_cards` and the `missing_md` / `missing_db` id lists
+- `generic_titles` — titles still shaped like `<product> CVE-xxxx-xxxxx`
+- `unlinked_cve` — CVE cards with neither `poc_path` nor `poc_code`
+- `consistent` — whether the DB and `kb/cards/` hold the same id set
 
-```text
-vuln_atlas/
-  db.py             SQLite schema / FTS5 / 中文 bigram / upsert
-  card.py           卡片模型、frontmatter 解析、体积校验、脱敏扫描
-  paths.py          VULN_ATLAS_KB / VULN_ATLAS_DB 路径解析与防逃逸
-  router.py         请求原文解析 → 结构化 Query
-  rank.py           召回 + 加权排序 + 结果裁剪
-  version.py        版本区间匹配
-  fingerprint.py    产品/厂商 → 指纹推导
-  indexer.py        从 cards/*.md 建索引
-  ingest/           数据源解析器（NVD/KEV/EPSS/CWE/ExploitDB/Nuclei/MSF/GitHub-PoC/Vulhub/Payloads…）
-  cli.py            CLI
-  mcp_server.py     MCP stdio server
-mcp_server.py       顶层 MCP 入口
-cli.py              顶层 CLI 入口
-web_app.py          本地只读 HTTP 服务
-web/index.html      Web UI
-skills/SKILL.md     Agent 使用说明
-kb/                 知识库成品（index.db / cards / artifacts / manifest.json）
-tests/              pytest
-```
+## Data sources
 
-## 数据来源
+`kb/manifest.json` records each snapshot's URL, fetch time, sha256, size, license and whether it may
+be redistributed.
 
-`kb/manifest.json` 记录每份快照的 URL、抓取时间、sha256、bytes、license、是否可再分发。
-
-已实现解析、参与产卡/加权的源：
-
-| 源 | 用途 | 状态 |
+| Source | Used for | Status |
 |---|---|---|
-| NVD CVE（2016–2026 快照） | 卡片主体、版本、CWE | ok |
-| CISA KEV | 已被利用标记，直接提升置信度 | ok |
-| FIRST EPSS | 保留策略与排序加权 | ok |
-| ExploitDB（CSV 映射） | EDB 编号指针 | ok |
-| Nuclei Templates（cves） | 可执行模板实体 | ok |
-| Metasploit | module 路径 / `use` 指令 | ok |
-| PoC-in-GitHub | 仓库元数据，仅作线索 | ok |
-| Vulhub | README 步骤 | ok |
-| PayloadsAllTheThings | 手法 Markdown 摘录 | ok |
-| CWE | 只取标签，不单独产卡 | partial |
+| NVD CVE (2016–2026 snapshot) | Card body, versions, CWE | ok |
+| CISA KEV | Known-exploited flag, confidence boost | ok |
+| FIRST EPSS | Retention policy and ranking weight | ok |
+| ExploitDB (CSV index) | EDB reference pointers | ok |
+| Nuclei Templates (`http/cves`) | Executable template artifacts | ok |
+| Metasploit | Module path / `use` command | ok |
+| PoC-in-GitHub | Repository metadata, leads only | ok |
+| Vulhub | README-derived steps | ok |
+| PayloadsAllTheThings | Technique excerpts | ok |
+| CWE | Tags only; no standalone cards | partial |
 
-未接入的源在 `kb/manifest.json` 里写明原因，不会假装存在：
+Sources that are explicitly not ingested, with reasons recorded in the manifest:
 
 ```text
-getsploit                依赖 Vulners 商业离线库，未取得授权
-trickest                 无快照
-HackTricks               CC BY-NC，再分发范围待人工确认
-InternalAllTheThings     仓库已迁移且无 license 声明
-先知（xianzhi）           无稳定公开 API，需授权导出
-本机 knowledges           无快照
-实战验证卡                需实验侧导出
+getsploit              requires the commercial Vulners offline DB; not licensed
+trickest               no snapshot
+HackTricks             CC BY-NC; redistribution scope not confirmed
+InternalAllTheThings   repository relocated; no license stated
+xianzhi (先知)          no stable public API; needs an authorized export
+local knowledges       no snapshot
+verified cards         must be exported from the lab side
 ```
 
-入库策略按数据量裁剪：全部 CVE 合并后按 EPSS、年份与目标卡片数筛选，保证索引体积与查询延迟可控。
+All data is localized during ingest; nothing is fetched at query time.
 
-所有数据在 ingest 阶段离线化；运行时不访问网络。
-
-## 开发
+## Development
 
 ```bash
 pip install -e ".[dev]"
 python -m pytest tests -q
 ```
 
+Tests run fully offline against temporary SQLite databases. New behaviour is developed test-first.
+
+## Security notes
+
+- Query-time SQL uses parameter binding only.
+- `poc_path` is resolved inside `kb/` with `..` and symlink escapes rejected.
+- Ingest scans for `flag{...}`, cloud keys, private keys and inline passwords, excluding template
+  placeholders.
+- The MCP server has no write path.
+
 ## License
 
-代码 license 待定。各数据源的 license 与 terms 在 `kb/manifest.json` 中逐项记录；标为不可再分发的数据（EPSS / ExploitDB / Metasploit 等）不会随仓库分发。
+Code is released under the [MIT License](LICENSE). Upstream data keeps its own license; per-source
+terms and redistribution flags are recorded in `kb/manifest.json`, and data marked non-redistributable
+is never committed.

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "vuln-atlas": {
+      "command": "python3",
+      "args": ["<repo>/mcp_server.py"],
+      "env": {
+        "VULN_ATLAS_DB": "<repo>/kb/index.db",
+        "VULN_ATLAS_KB": "<repo>/kb"
+      }
+    }
+  }
+}
