@@ -87,7 +87,7 @@ def build_index(db_file: Optional[Path] = None, cards_dir: Optional[Path] = None
     dbm.load_concepts(conn, [
         {"term": t, "canonical_tag": tag, "lang": lang, "source": "builtin", "confidence": 0.6}
         for t, tag, lang in BUILTIN_CONCEPTS
-    ])
+    ], replace_builtin=True)
 
     if write_manifest:
         m = Manifest(paths.manifest_path())

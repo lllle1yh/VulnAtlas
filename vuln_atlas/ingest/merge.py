@@ -152,7 +152,7 @@ def merge_drafts(drafts: Iterable[CardDraft],
 
         d2 = CardDraft(
             cve=cve,
-            title=(base.title or cve)[:160],
+            title=(base.title or "")[:160],
             aliases=aliases,
             vendor=vendor,
             product=product,

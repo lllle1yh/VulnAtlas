@@ -105,7 +105,7 @@ def collect_drafts(limit_per_source: int = 0, min_epss: float = 0.1) -> (List[Ca
         "hacktricks": "unavailable: CC BY-NC 受限，需人工确认再分发范围",
         "internalallthethings": "unavailable: 仓库已迁移且未声明 license，需复核",
         "xianzhi": "unavailable: 无稳定公开 API，只能授权导出",
-        "knowledges": "unavailable-local: kb/raw/knowledges/ 为空（原路径 C:\\Users\\30209\\...\\knowledges 本机不存在）",
+        "knowledges": "unavailable-local: kb/raw/knowledges/ 为空，未做快照",
         "verified-cards": "unavailable: 需实验侧导出 verified 卡",
     }
     for src, msg in fixed_unavailable.items():

@@ -213,6 +213,60 @@ def load_frontmatter(text: str) -> Tuple[Dict[str, Any], str]:
     return _fallback_load(fm), body
 
 
+# ---------------- 标题 ----------------
+# `<product> CVE-xxx`；product 部分可能带 YAML 转义残留（`track-it\!`、`joomla\!`）
+GENERIC_TITLE_RE = re.compile(r"^(?:.*\s)?CVE-\d{4}-\d{4,7}$", re.I)
+_TITLE_PREFIX_RE = re.compile(
+    r"^(?:(?:in|on|the|a|an|this|there\s+is)\s+|[^.]{0,80}(?:allows|exists|vulnerability)\b)",
+    re.I,
+)
+_TITLE_ENRICH_RE = re.compile(r"（[^）]*(?:KEV|EPSS)[^）]*）|\([^)]*(?:KEV|EPSS)[^)]*\)")
+
+
+def is_generic_title(title: str) -> bool:
+    """`<product> CVE-xxxx-xxxxx` 这类自动生成的低信息量标题。"""
+    return bool(GENERIC_TITLE_RE.match(str(title or "").strip()))
+
+
+def title_from_description(description: str, limit: int = 160) -> Optional[str]:
+    """描述首句 → 标题；太短就给 None。
+
+    首句通常以 "In Apache Tomcat 9.0 ... allows ..." / "a ... flaw exists in X"
+    开头，剥掉引导词和冠词后可以直接当标题读。
+    """
+    desc = _TITLE_ENRICH_RE.sub(" ", str(description or ""))
+    desc = re.sub(r"\s+", " ", desc).strip()
+    # 只在"句子边界 + 大写开头"处切；产品名里的 `Track-It! 11.4` 不算句号。
+    # 缩写（"U.S. Air Force"）会被切得只剩 "U.S."，太短时把下一段拼回来。
+    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z])", desc) if desc else []
+    first = parts[0].strip() if parts else ""
+    i = 1
+    while len(first) < 20 and i < len(parts):
+        first = f"{first} {parts[i].strip()}"
+        i += 1
+    first = re.sub(r"^(?:(?:in|on|this|there\s+is)\s+|a\s+|an\s+|the\s+)+",
+                   "", first, flags=re.I).strip()
+    if len(first) < 20:
+        return None
+    return first[:limit].rstrip(" ,;:-")
+
+
+def derive_title(title: str, description: str = "", product: Optional[str] = None,
+                 limit: int = 160) -> str:
+    """把 `<product> CVE-xxx` 换成描述首句；保留原本有信息量的标题。"""
+    title = str(title or "").strip()
+    if not is_generic_title(title):
+        return title
+    first = title_from_description(description, limit)
+    if first:
+        return first
+    if product:
+        # 回退标题：产品名里不能留 YAML 转义残留
+        product = product.replace("\\", "")
+        return f"{product.replace('_', ' ')} {title.rsplit(' ', 1)[-1]}"[:limit]
+    return title
+
+
 def _scalar(v: Optional[str]) -> str:
     if v is None:
         return '""'

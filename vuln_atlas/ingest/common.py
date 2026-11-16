@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..card import Card, SECTIONS
+from ..card import Card, SECTIONS, derive_title
 
 
 def sha256_file(path: Path, chunk: int = 1 << 20) -> str:
@@ -109,8 +109,8 @@ class Manifest:
 
 def draft_to_card(d: CardDraft, body_budget: int = 5000) -> Card:
     """把 CardDraft 渲染成六段正文的 Card。"""
-    d.title = clean_text(d.title)
     d.description = clean_text(d.description)
+    d.title = derive_title(clean_text(d.title), d.description, d.product, limit=160)
     d.steps = clean_text(d.steps)
     d.marker = clean_text(d.marker)
     d.aliases = [clean_text(a) for a in d.aliases if clean_text(a)]

@@ -155,22 +155,21 @@ BUILTIN_CONCEPTS = [
     ("未授权访问", "auth", "zh"), ("越权", "auth", "zh"), ("认证绕过", "auth", "zh"),
     ("弱口令", "auth", "zh"), ("默认口令", "auth", "zh"),
     ("信息泄露", "info-leak", "zh"), ("ssrf", "ssrf", "zh"), ("跨站", "xss", "zh"),
-    ("邮件", "command-injection", "zh"), ("发信", "command-injection", "zh"),
-    ("phpmailer", "command-injection", "zh"), ("sendmail", "command-injection", "zh"),
-    ("头注入", "injection", "zh"), ("表达式注入", "ognl", "zh"), ("ognl", "ognl", "zh"),
+    # 只保留能指向具体漏洞的表述。邮件/发信/解析/换行/绑定/覆盖/越界/写文件
+    # 这类通用词会把无关查询拉进来（"邮件服务器版本""响应里的换行符"），已移除。
+    ("邮件头注入", "injection", "zh"), ("头注入", "injection", "zh"),
+    ("表达式注入", "ognl", "zh"), ("ognl", "ognl", "zh"),
     ("蓝屏", "dos", "zh"), ("拒绝服务", "dos", "zh"), ("提权", "privilege-escalation", "zh"),
     ("本地提权", "privilege-escalation", "zh"), ("破壳", "rce", "zh"),
-    ("换行", "path-traversal", "zh"), ("越界", "rce", "zh"), ("文件读取", "lfi", "zh"),
+    ("文件读取", "lfi", "zh"),
     # 短词/口语说法（双字也必须收录，中文双字信息量大）
     ("穿越", "path-traversal", "zh"), ("目录遍历", "path-traversal", "zh"),
     ("读文件", "lfi", "zh"), ("下载文件", "lfi", "zh"),
     ("打点", "rce", "zh"), ("拿下", "rce", "zh"),
-    ("绑定", "deserialization", "zh"), ("数据绑定", "deserialization", "zh"),
-    ("覆盖", "deserialization", "zh"), ("写文件", "rce", "zh"),
-    ("邮件头", "command-injection", "zh"), ("头部注入", "injection", "zh"),
-    ("上传点", "upload", "zh"), ("解析", "upload", "zh"),
-    ("蓝屏", "dos", "zh"), ("崩溃", "dos", "zh"), ("服务中断", "dos", "zh"),
-    ("越权", "auth", "zh"), ("绕过", "auth", "zh"),
+    ("数据绑定", "deserialization", "zh"),
+    ("上传点", "upload", "zh"),
+    ("崩溃", "dos", "zh"), ("服务中断", "dos", "zh"),
+    ("越权", "auth", "zh"), ("认证绕过", "auth", "zh"),
 ]
 
 # 中文短词（2 字）在 trigram 下不可靠（需要 3 字符才能匹配），
@@ -202,6 +201,20 @@ def expand_concepts(conn: sqlite3.Connection, text: str) -> List[str]:
 
 
 # ---------------- 主检索 ----------------
+# GitHub 元数据索引只是"线索清单"（仓库名/语言/star），不是可执行 POC，
+# 不应因此获得 POC_BONUS；其余 poc_path 一律算作有 POC。
+_META_ARTIFACT_RE = re.compile(r"(?:^|/)github-poc-index\.txt$")
+
+
+def _counts_as_poc(poc_path: Optional[str], poc_code: Optional[str]) -> bool:
+    if poc_code and str(poc_code).strip():
+        return True
+    p = str(poc_path or "").strip()
+    if not p:
+        return False
+    return not _META_ARTIFACT_RE.search(p)
+
+
 def search(
     conn: sqlite3.Connection,
     query: Query,
@@ -279,7 +292,7 @@ def search(
                             s_ += RECENCY_BONUS
                     except ValueError:
                         pass
-                if row["poc_path"] or row["poc_code"]:
+                if _counts_as_poc(row["poc_path"], row["poc_code"]):
                     s_ += POC_BONUS
                 bonus_cache[row["id"]] = s_
         for i in need:
@@ -300,7 +313,7 @@ def search(
                     s_ += RECENCY_BONUS
             except ValueError:
                 pass
-        if card.poc_path or card.poc_code:
+        if _counts_as_poc(card.poc_path, card.poc_code):
             s_ += POC_BONUS
         steps = card.section("最小步骤") or ""
         if steps.strip() and not any(m in steps for m in
@@ -393,7 +406,7 @@ def search(
                             b += RECENCY_BONUS
                     except ValueError:
                         pass
-                if r["poc_path"] or r["poc_code"]:
+                if _counts_as_poc(r["poc_path"], r["poc_code"]):
                     b += POC_BONUS
                 inline_bonus[r["card_id"]] = b
                 bonus_cache[r["card_id"]] = b

@@ -358,8 +358,16 @@ def get_term_df(conn: sqlite3.Connection, terms: List[str]) -> Dict[str, int]:
     return out
 
 
-def load_concepts(conn: sqlite3.Connection, rows: Iterable[Dict[str, Any]]) -> int:
+def load_concepts(conn: sqlite3.Connection, rows: Iterable[Dict[str, Any]],
+                  replace_builtin: bool = False) -> int:
+    """写入概念映射。
+
+    replace_builtin=True 时先删掉旧的 builtin 行，保证 BUILDIN_CONCEPTS 的
+    修正能真正生效（否则删掉的错误映射会作为陈旧行一直留在库里）。
+    """
     n = 0
+    if replace_builtin:
+        conn.execute("DELETE FROM concepts WHERE source = 'builtin'")
     for r in rows:
         conn.execute(
             "INSERT INTO concepts(term, canonical_tag, lang, source, confidence) VALUES (?,?,?,?,?) "

@@ -126,7 +126,8 @@ def apply(card: Card) -> Card:
 
     注意：
       - `poc_code`（如 Metasploit module 指针）是卡内可执行内容，不因没有本地文件而清空；
-      - GitHub-PoC 卡没有源码，落一个本地元数据证据文件，但不伪造 poc_path。
+      - GitHub-PoC 卡没有源码，落一个本地元数据证据文件：poc_path 指向它，
+        poc_type 记为 github-poc，但置信度保持 unverified（排序不加 POC_BONUS）。
     """
     rel = materialize(card)
     secs = card.sections()
@@ -140,6 +141,8 @@ def apply(card: Card) -> Card:
         else:
             gh = materialize_github_meta(card)
             if gh:
+                card.poc_path = gh
+                card.poc_type = card.poc_type or "github-poc"
                 secs["证据指针"] = f"本地证据：{gh}（GitHub PoC 元数据，非源码）"
             else:
                 secs["证据指针"] = "本地证据：无（仅元数据卡）"

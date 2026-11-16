@@ -1,4 +1,4 @@
-"""CLI（§7.1）：search / get / ingest / verify / stats / validate / eval。"""
+"""CLI（§7.1）：search / get / ingest / verify / stats / validate / check / repair / eval。"""
 from __future__ import annotations
 
 import argparse
@@ -128,6 +128,35 @@ def cmd_stats(args) -> int:
     return 0
 
 
+def cmd_check(args) -> int:
+    from . import maintenance
+    conn = dbm.connect(paths.db_path(), readonly=True)
+    try:
+        report = maintenance.check(conn, Path(args.cards) if args.cards else None)
+    finally:
+        conn.close()
+    _print(report)
+    return 0 if report["consistent"] else 2
+
+
+def cmd_repair(args) -> int:
+    from . import maintenance
+    conn = dbm.connect(paths.db_path())
+    try:
+        dbm.init_db(conn)
+        report = maintenance.repair(
+            conn,
+            cards_dir=Path(args.cards) if args.cards else None,
+            artifacts_dir=Path(args.artifacts) if args.artifacts else None,
+            apply=args.apply,
+            sync_md=args.sync_md,
+        )
+    finally:
+        conn.close()
+    _print(report)
+    return 0
+
+
 def cmd_eval(args) -> int:
     from .evaluate import run_eval
     report = run_eval(Path(args.queries) if args.queries else None)
@@ -177,6 +206,18 @@ def main(argv=None) -> int:
 
     st = sub.add_parser("stats", help="库统计")
     st.set_defaults(func=cmd_stats)
+
+    ck = sub.add_parser("check", help="体检：DB / cards 是否一致")
+    ck.add_argument("--cards")
+    ck.set_defaults(func=cmd_check)
+
+    rp = sub.add_parser("repair", help="修复标题 / 关联元数据 artifact / 导出缺失卡 / 同步概念表")
+    rp.add_argument("--cards")
+    rp.add_argument("--artifacts")
+    rp.add_argument("--apply", action="store_true", help="不传则只统计，不落盘")
+    rp.add_argument("--sync-md", action="store_true",
+                    help="已有 md 与 DB 不一致时一并重写（cards/ 镜像 DB）")
+    rp.set_defaults(func=cmd_repair)
 
     ev = sub.add_parser("eval", help="跑检索评测")
     ev.add_argument("--queries")
