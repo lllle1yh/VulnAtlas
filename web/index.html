@@ -6,7 +6,7 @@
 <title>VulnAtlas</title>
 <style>
   :root{
-    --bg:#0b0f14; --panel:#111820; --panel2:#151f2a; --line:#263241;
+    --bg:#0b0f14; --panel:#111820; --line:#263241;
     --text:#e8eef5; --muted:#8fa0b3; --accent:#5eead4; --accent2:#38bdf8;
     --warn:#fbbf24; --bad:#fb7185; --ok:#34d399; --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
   }
@@ -16,51 +16,60 @@
   h1{margin:0;font-size:26px;letter-spacing:.3px}
   h1 span{color:var(--accent)}
   .sub{color:var(--muted);margin-top:6px}
-  .wrap{max-width:1280px;margin:0 auto;padding:12px 24px 40px}
-  .bar{display:grid;grid-template-columns:1fr 210px 150px 110px 90px;gap:8px;margin:18px 0 10px}
-  input,button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:11px 12px;outline:none}
-  input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px #38bdf822}
+  .wrap{max-width:1360px;margin:0 auto;padding:12px 24px 40px}
+  .bar{display:grid;grid-template-columns:1fr 190px 130px 130px;gap:8px;margin:18px 0 8px}
+  .bar2{display:grid;grid-template-columns:1fr 90px;gap:8px;margin:0 0 10px}
+  input,button,textarea{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:11px 12px;outline:none}
+  textarea{resize:vertical;min-height:64px;font-family:var(--mono);font-size:12px}
+  input:focus,textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px #38bdf822}
   button{cursor:pointer;background:linear-gradient(180deg,#15313c,#10232c);border-color:#2b5a62;color:#d9fffb;font-weight:600}
   button:hover{border-color:var(--accent)}
-  .hint{color:var(--muted);font-size:12px;margin:4px 2px 18px}
-  .layout{display:grid;grid-template-columns:minmax(380px,1fr) minmax(420px,1.1fr);gap:16px;align-items:start}
+  .hint{color:var(--muted);font-size:12px;margin:4px 2px 16px}
+  .parsed{font-family:var(--mono);font-size:11px;color:#7dd3fc;margin:0 0 14px;word-break:break-all}
+  .layout{display:grid;grid-template-columns:minmax(380px,1fr) minmax(460px,1.15fr);gap:16px;align-items:start}
   .panel{background:linear-gradient(180deg,var(--panel),#0e151c);border:1px solid var(--line);border-radius:14px;overflow:hidden}
   .panel h2{margin:0;padding:13px 16px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
-  .results{max-height:calc(100vh - 290px);overflow:auto}
-  .item{padding:13px 16px;border-bottom:1px solid #1c2733;cursor:pointer}
+  .results{max-height:calc(100vh - 330px);overflow:auto}
+  .item{padding:12px 16px;border-bottom:1px solid #1c2733;cursor:pointer}
   .item:hover,.item.active{background:#132330}
   .item .top{display:flex;justify-content:space-between;gap:10px}
   .id{font-family:var(--mono);color:var(--accent);font-size:12px}
-  .title{font-weight:650;margin:4px 0}
-  .meta{color:var(--muted);font-size:12px;display:flex;gap:8px;flex-wrap:wrap}
-  .pill{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:11px}
-  .conf{color:var(--ok)} .conf.candidate{color:var(--warn)} .conf.unverified{color:var(--bad)}
+  .title{font-weight:650;margin:3px 0;font-size:13.5px}
+  .meta{color:var(--muted);font-size:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .pill{border:1px solid var(--line);border-radius:999px;padding:0 8px;font-size:11px;line-height:18px}
+  .conf{color:var(--ok);font-weight:600} .conf.candidate{color:var(--warn)} .conf.unverified{color:var(--bad)}
   .why{color:#7dd3fc;font-size:11px;font-family:var(--mono)}
-  .detail{padding:16px;min-height:300px}
-  .detail .id{font-size:13px}
+  .snip{color:#9db0c4;font-size:12px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .detail{padding:16px;min-height:320px}
   .detail h3{margin:6px 0 4px;font-size:19px}
-  .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;margin:12px 0;font-size:12px}
+  .kv{display:grid;grid-template-columns:100px 1fr;gap:5px 10px;margin:12px 0;font-size:12px}
   .kv .k{color:var(--muted)}
   .kv .v{font-family:var(--mono);word-break:break-word}
-  pre{background:#0a1016;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;white-space:pre-wrap;font:12px/1.5 var(--mono);max-height:300px}
-  .body{white-space:pre-wrap;border-top:1px solid var(--line);padding-top:12px;color:#c8d6e5;font-size:13px;max-height:300px;overflow:auto}
+  pre{background:#0a1016;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;white-space:pre-wrap;font:12px/1.5 var(--mono);max-height:280px;margin:4px 0 12px}
+  .sec{color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-top:12px}
+  .body{white-space:pre-wrap;background:#0a1016;border:1px solid var(--line);border-radius:10px;padding:12px;color:#c8d6e5;font-size:12.5px;max-height:360px;overflow:auto}
   .empty{color:var(--muted);padding:22px}
   .err{color:var(--bad)}
-  @media(max-width:900px){.bar{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr}}
+  .sugg button{margin:2px 4px 0 0;padding:4px 10px;font-size:12px;background:#0f1c24}
+  @media(max-width:900px){.bar,.bar2{grid-template-columns:1fr}.layout{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header class="wrap">
   <h1><span>Vuln</span>Atlas</h1>
-  <div class="sub">离线漏洞卡：CVE + 指纹 + POC + 最小步骤。先搜 CVE/组件，再读一张卡。</div>
+  <div class="sub">离线漏洞卡：CVE + 指纹 + POC + 最小步骤。不会拼关键词就贴请求原文。</div>
   <div class="bar">
-    <input id="q" placeholder="CVE-2018-3760 / rails sprockets / 中文描述" autofocus>
-    <input id="product" placeholder="product（可选）">
-    <input id="version" placeholder="version（可选）">
+    <input id="q" placeholder="CVE-2018-3760 / rails sprockets / 本地文件包含怎么打" autofocus>
+    <input id="product" placeholder="product">
+    <input id="version" placeholder="version">
     <input id="tags" placeholder="tags，逗号分隔">
+  </div>
+  <div class="bar2">
+    <textarea id="request" placeholder="可选：贴 HTTP 请求 / 响应头 / curl / nmap 原文，服务端自己抽 CVE、组件、版本、指纹"></textarea>
     <button id="go">搜索</button>
   </div>
-  <div class="hint">Enter 搜索 · 点击结果看卡 · 先精确 CVE，再 product/version，最后 BM25</div>
+  <div class="hint">Enter 或 Ctrl+Enter 搜索 · 点结果看卡 · 顺序：CVE 精确 → product/version → 指纹 → tag → FTS</div>
+  <div id="parsed" class="parsed"></div>
 </header>
 <main class="wrap layout">
   <section class="panel">
@@ -75,32 +84,48 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let active = null;
-
-function pill(text, cls='') { return `<span class="pill ${cls}">${escapeHtml(text)}</span>`; }
-function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const esc = (s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pill = (t,c='')=>`<span class="pill ${c}">${esc(t)}</span>`;
 
 async function doSearch(){
-  const params = new URLSearchParams();
-  params.set('q', $('q').value.trim());
-  for (const k of ['product','version','tags']) if ($(k).value.trim()) params.set(k, $(k).value.trim());
+  const p = new URLSearchParams();
+  const q = $('q').value.trim(), req = $('request').value.trim();
+  if(q) p.set('q', q);
+  if(req) p.set('request', req);
+  for (const k of ['product','version','tags']) if ($(k).value.trim()) p.set(k, $(k).value.trim());
+  p.set('top_k','8');
   $('results').innerHTML = '<div class="empty">搜索中…</div>';
+  $('parsed').textContent = '';
   try{
-    const res = await fetch('/api/search?' + params.toString());
+    const res = await fetch('/api/search?' + p.toString());
     const data = await res.json();
+    if(data.query) $('parsed').textContent =
+      `parsed: cve=${data.query.cve||'-'} product=${data.query.product||'-'} version=${data.query.version||'-'} ` +
+      `tags=${(data.query.tags||[]).join(',')||'-'} fp=${(data.query.fingerprint||[]).slice(0,4).join(' | ')||'-'}`;
     const items = data.results || [];
-    if(!items.length){ $('results').innerHTML = '<div class="empty">没有命中。换 CVE / product / 别名试试。</div>'; return; }
-    $('results').innerHTML = items.map((x,i)=>`
-      <div class="item ${active===x.id?'active':''}" data-id="${escapeHtml(x.id)}" data-i="${i}">
-        <div class="top"><span class="id">${escapeHtml(x.id)}</span><span class="why">${escapeHtml(x.why)} · ${x.score}</span></div>
-        <div class="title">${escapeHtml(x.title)}</div>
+    if(!items.length){
+      const s = (data.suggested_queries||[]).map(x=>`<button data-q="${esc(x)}">${esc(x)}</button>`).join('');
+      $('results').innerHTML = `<div class="empty">没有命中。<div class="sugg">${s}</div></div>`;
+      bindSuggest();
+      return;
+    }
+    $('results').innerHTML = items.map(x=>`
+      <div class="item ${active===x.id?'active':''}" data-id="${esc(x.id)}">
+        <div class="top"><span class="id">${esc(x.id)}</span><span class="why">${esc(x.why)} · ${x.score}</span></div>
+        <div class="title">${esc(x.title)}</div>
         <div class="meta">
-          <span class="conf ${x.confidence}">${escapeHtml(x.confidence)}</span>
+          <span class="conf ${esc(x.confidence)}">${esc(x.confidence)}</span>
           ${x.poc_type?pill(x.poc_type):''}
           ${(x.tags||[]).slice(0,4).map(t=>pill(t)).join('')}
         </div>
+        <div class="snip">${esc(x.snippet||'')}</div>
       </div>`).join('');
     [...document.querySelectorAll('.item')].forEach(el=>el.onclick=()=>loadCard(el.dataset.id));
-  }catch(e){ $('results').innerHTML = `<div class="empty err">${escapeHtml(e.message)}</div>`; }
+  }catch(e){ $('results').innerHTML = `<div class="empty err">${esc(e.message)}</div>`; }
+}
+
+function bindSuggest(){
+  [...document.querySelectorAll('.sugg button')].forEach(b=>b.onclick=()=>{ $('q').value=b.dataset.q; doSearch(); });
 }
 
 async function loadCard(id){
@@ -109,32 +134,35 @@ async function loadCard(id){
   $('detail').innerHTML = '<div class="empty">加载中…</div>';
   const res = await fetch('/api/card?id=' + encodeURIComponent(id));
   const data = await res.json();
-  if(!res.ok){ $('detail').innerHTML = `<div class="empty err">${escapeHtml(data.error||'not found')}</div>`; return; }
+  if(!res.ok){ $('detail').innerHTML = `<div class="empty err">${esc(data.error||'not found')}</div>`; return; }
   const c = data.card;
   $('detail').innerHTML = `
-    <div class="id">${escapeHtml(c.id)}</div>
-    <h3>${escapeHtml(c.title)}</h3>
+    <div class="id">${esc(c.id)}</div>
+    <h3>${esc(c.title)}</h3>
     <div class="meta">
-      <span class="conf ${c.confidence}">${escapeHtml(c.confidence)}</span>
+      <span class="conf ${esc(c.confidence)}">${esc(c.confidence)}</span>
       ${c.poc_type?pill(c.poc_type):''}
+      ${data.truncated?'<span class="pill" style="color:var(--warn)">truncated</span>':''}
       ${(c.tags||[]).map(t=>pill(t)).join('')}
     </div>
     <div class="kv">
-      <div class="k">CVE</div><div class="v">${escapeHtml(c.cve||'')}</div>
-      <div class="k">versions</div><div class="v">${escapeHtml((c.versions||[]).join(', ')||'—')}</div>
-      <div class="k">fingerprint</div><div class="v">${escapeHtml((c.fingerprint||[]).join(', ')||'—')}</div>
-      <div class="k">poc_path</div><div class="v">${escapeHtml(c.poc_path||'—')}</div>
-      <div class="k">source</div><div class="v">${escapeHtml((c.source||[]).join(', '))}</div>
+      <div class="k">CVE</div><div class="v">${esc(c.cve||'—')}</div>
+      <div class="k">product</div><div class="v">${esc(c.product||'—')}</div>
+      <div class="k">versions</div><div class="v">${esc((c.versions||[]).join(' , ')||'—')}</div>
+      <div class="k">fingerprint</div><div class="v">${esc((c.fingerprint||[]).join(' , ')||'—')}</div>
+      <div class="k">poc_path</div><div class="v">${esc(c.poc_path||'—')}</div>
+      <div class="k">source</div><div class="v">${esc((c.source||[]).join(', '))}</div>
     </div>
-    <div class="k" style="color:var(--muted);font-size:12px">steps</div>
-    <pre>${escapeHtml(c.steps||'—')}</pre>
-    <div class="k" style="color:var(--muted);font-size:12px">marker</div>
-    <pre>${escapeHtml(c.marker||'—')}</pre>
-    <div class="k" style="color:var(--muted);font-size:12px">body</div>
-    <div class="body">${escapeHtml(c.body||'—')}</div>`;
+    ${c.poc_code?`<div class="sec">poc_code</div><pre>${esc(c.poc_code)}</pre>`:''}
+    <div class="sec">最小步骤</div><pre>${esc(c.steps||'—')}</pre>
+    <div class="sec">预期 marker</div><pre>${esc(c.marker||'—')}</pre>
+    <div class="sec">正文</div>
+    <div class="body">${esc(c.body||'—')}</div>`;
 }
+
 $('go').onclick = doSearch;
 $('q').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+$('request').addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) doSearch(); });
 </script>
 </body>
 </html>

@@ -1,9 +1,18 @@
 [project]
 name = "vuln-atlas"
-version = "0.1.0"
-description = "Offline, agent-first vulnerability knowledge base"
+version = "0.2.0"
+description = "Offline, lightweight, agent-first vulnerability knowledge base (CVE + POC in one card)"
+readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["PyYAML>=6.0"]
+dependencies = []
+
+[project.optional-dependencies]
+# frontmatter 用 PyYAML；缺省时 card.py 有内置解析器兜底
+yaml = ["PyYAML>=6.0"]
+dev = ["pytest>=7.0", "PyYAML>=6.0"]
 
 [project.scripts]
 vuln-atlas = "vuln_atlas.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

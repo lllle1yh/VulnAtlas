@@ -4,18 +4,29 @@ __pycache__/
 .venv/
 venv/
 
-# local dataset snapshots and generated indexes
+# 生成物与本地数据快照
 raw/
-artifacts/*
-!artifacts/.gitkeep
-cards/*
-!cards/.gitkeep
-*.db
 *.db-shm
 *.db-wal
 *.npy
+demo.db
+index.db
 
-# local editor/os files
+# 知识库内容：卡片 / POC 实体 / 主索引体积过大，按需在本地构建
+kb/index.db
+!kb/manifest.json
+kb/cards/*
+!kb/cards/.gitkeep
+kb/artifacts/*
+!kb/artifacts/.gitkeep
+
+# 旧版原型目录（数据放在 kb/ 下）
+cards/*
+!cards/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
+
+# 本地编辑器/系统文件
 .DS_Store
 Thumbs.db
 .vscode/

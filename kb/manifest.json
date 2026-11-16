@@ -1,0 +1,370 @@
+{
+  "generated_at": "2026-11-13T14:45:00+08:00",
+  "snapshots": [
+    {
+      "source": "epss",
+      "url": "https://epss.cyentia.com/epss_scores-current.csv.gz",
+      "fetched_at": "2026-11-12T21:31:24+08:00",
+      "sha256": "c786d3941114d010a9b63f382e6a96ff10f8b7504dd0f1a3499fee7d335370d7",
+      "bytes": 2841325,
+      "license": "first-epss-open (attribution required)",
+      "redistribute": false,
+      "status": "ok",
+      "note": "每日更新，强依赖当天快照"
+    },
+    {
+      "source": "exploitdb_csv",
+      "url": "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv",
+      "fetched_at": "2026-11-12T21:31:47+08:00",
+      "sha256": "9368e817ff85a87920c4a0dfd3fd5b64932b3e28c1cdae7e67acb4bfe44b19c5",
+      "bytes": 10184817,
+      "license": "GPL-2.0",
+      "redistribute": false,
+      "status": "ok",
+      "note": "只取 CSV 映射"
+    },
+    {
+      "source": "github-poc",
+      "url": "https://github.com/nomi-sec/PoC-in-GitHub",
+      "fetched_at": "2026-11-12T22:25:16+08:00",
+      "sha256": "00b21823d99454c2e417725d96d0862847ead54e61def5af7b8a93d6050daae4",
+      "bytes": 33244059,
+      "license": "CC0-1.0",
+      "redistribute": true,
+      "status": "ok",
+      "note": "只取按 CVE 的仓库元数据，不下载源码"
+    },
+    {
+      "source": "kev",
+      "url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+      "fetched_at": "2026-11-12T21:31:04+08:00",
+      "sha256": "41c8091ad62d508d6f8906ad5cd26b20efe551f7d51b95ecc8a6981fa640b4ea",
+      "bytes": 1850831,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "metasploit",
+      "url": "https://github.com/rapid7/metasploit-framework",
+      "fetched_at": "2026-11-13T11:32:59+08:00",
+      "sha256": "856082603c587d10af3ed204fac8b6fc6e846a0cc42ff6ae8bded37e819d9600",
+      "bytes": 393680,
+      "license": "NOASSERTION (upstream; module index only)",
+      "redistribute": false,
+      "status": "ok",
+      "note": "只索引 module 路径与 CVE，不复制 Ruby 源码"
+    },
+    {
+      "source": "nuclei",
+      "url": "https://github.com/projectdiscovery/nuclei-templates",
+      "fetched_at": "2026-11-12T22:24:49+08:00",
+      "sha256": "56dd673be5a8b6058fa3a75799723cddfffe9692a40db3494f282810a65b7f46",
+      "bytes": 12056540,
+      "license": "MIT",
+      "redistribute": true,
+      "status": "ok",
+      "note": "只取 cves 模板"
+    },
+    {
+      "source": "nvd-2016",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2016.json.gz",
+      "fetched_at": "2026-11-12T21:59:00+08:00",
+      "sha256": "a2d2aef7ca030198a14e9d1f7a145f563118270855cdf281db4ebd9e6226da16",
+      "bytes": 5171553,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2017",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2017.json.gz",
+      "fetched_at": "2026-11-12T21:59:12+08:00",
+      "sha256": "329a61d7f7201f60f5b8f2beeca971a87d6967c51e59d6579eca4d4109acfde7",
+      "bytes": 7709747,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2018",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2018.json.gz",
+      "fetched_at": "2026-11-12T22:00:04+08:00",
+      "sha256": "be2ad2a915d9e0770a98bb2c58cfc43a3abf17e40626d3320752a0175b6db1d8",
+      "bytes": 8273750,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2019",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2019.json.gz",
+      "fetched_at": "2026-11-12T22:00:20+08:00",
+      "sha256": "5bc4a539622b3353488500f2be43f622954c3f75aa8e96207d8422f79b19c48f",
+      "bytes": 10200293,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2020",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2020.json.gz",
+      "fetched_at": "2026-11-12T22:00:41+08:00",
+      "sha256": "731ea3d6dad72a015685942a1261c22d96133bfac899ca8e284fe959d350f868",
+      "bytes": 14017159,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2021",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2021.json.gz",
+      "fetched_at": "2026-11-12T22:04:08+08:00",
+      "sha256": "e46fd5178c5eab4c96282ca851826ed7932cd557568152e0b4b5efb71b27ffc5",
+      "bytes": 16869841,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2022",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2022.json.gz",
+      "fetched_at": "2026-11-12T22:04:16+08:00",
+      "sha256": "86267bac8cc84acc80fa20ee52829e077f317a0acd0cf9ec9705033073b81b16",
+      "bytes": 18462235,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2023",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2023.json.gz",
+      "fetched_at": "2026-11-13T12:24:31+08:00",
+      "sha256": "b22d109681d11eae234a3743d9cd1f9ff975378d9e3002030eb5a1aa1cfd593e",
+      "bytes": 20326969,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2024",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2024.json.gz",
+      "fetched_at": "2026-11-12T22:06:21+08:00",
+      "sha256": "ad80995ecb2a05cdf82a952eac6e23a7b68d105470faf448f3af0ed619032896",
+      "bytes": 25169719,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2025",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2025.json.gz",
+      "fetched_at": "2026-11-12T22:06:48+08:00",
+      "sha256": "8f4e1ab29f7742d54eb3cd5e97c3873fa27cb135ed9bb5c15cae115d357e7ea4",
+      "bytes": 25896842,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "nvd-2026",
+      "url": "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2026.json.gz",
+      "fetched_at": "2026-11-12T22:07:42+08:00",
+      "sha256": "1182553cf1a8dba079bde6f7a17d3686ca8226951e856c7f2511da8c4208238f",
+      "bytes": 45968088,
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "source": "payloads",
+      "url": "https://github.com/swisskyrepo/PayloadsAllTheThings",
+      "fetched_at": "2026-11-13T10:17:43+08:00",
+      "sha256": "c90b262f039e030483322f9365d2c85279c7b9a0af73b429d8c55ccde63de109",
+      "bytes": 1074613,
+      "license": "MIT",
+      "redistribute": true,
+      "status": "ok",
+      "note": "只取相关 Markdown"
+    },
+    {
+      "source": "vulhub",
+      "url": "https://github.com/vulhub/vulhub",
+      "fetched_at": "2026-11-13T08:31:48+08:00",
+      "sha256": "96d0974fa06a68001ae11834bb8041ec2c9fc5536a9aa9ad9024fb4d84f17ac0",
+      "bytes": 638259,
+      "license": "MIT",
+      "redistribute": true,
+      "status": "ok",
+      "note": "只取 README 步骤，不启动容器"
+    },
+    {
+      "source": "cwe",
+      "url": "https://cwe.mitre.org/data/csv/1000.csv.zip",
+      "fetched_at": "2026-11-13T14:44:12+08:00",
+      "sha256": "b3b8fc1bb6e2398ce4f1a7b0f5f74949f6cd568a26190d203e1103c3aafa6ff5",
+      "bytes": 644612,
+      "license": "CC-BY-4.0",
+      "redistribute": true,
+      "status": "ok",
+      "note": "只用标签"
+    }
+  ],
+  "sources": {
+    "kev": {
+      "status": "ok",
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "fetched_at": "2026-11-12T21:31:04+08:00",
+      "note": "1779"
+    },
+    "epss": {
+      "status": "ok",
+      "license": "first-epss-open (attribution required)",
+      "redistribute": false,
+      "fetched_at": "2026-11-12T21:31:24+08:00",
+      "note": "148927"
+    },
+    "exploitdb_csv": {
+      "status": "ok",
+      "license": "GPL-2.0",
+      "redistribute": false,
+      "fetched_at": "2026-11-12T21:31:47+08:00",
+      "note": "只取 CSV 映射"
+    },
+    "nvd": {
+      "status": "ok",
+      "note": "342141",
+      "fetched_at": null
+    },
+    "cwe": {
+      "status": "partial",
+      "license": "CC-BY-4.0",
+      "redistribute": true,
+      "fetched_at": "2026-11-13T14:44:12+08:00",
+      "note": "快照已抓取；当前只通过 NVD weaknesses 使用常用 CWE 标签"
+    },
+    "exploitdb": {
+      "status": "ok",
+      "note": "27434",
+      "fetched_at": null
+    },
+    "nuclei": {
+      "status": "ok",
+      "note": "4395",
+      "fetched_at": null
+    },
+    "metasploit": {
+      "status": "ok",
+      "note": "2687 drafts",
+      "fetched_at": null
+    },
+    "getsploit": {
+      "status": "unavailable",
+      "note": "依赖 Vulners 商业离线 DB，未取得授权",
+      "fetched_at": null
+    },
+    "github-poc": {
+      "status": "ok",
+      "note": "11160",
+      "fetched_at": null
+    },
+    "trickest": {
+      "status": "unavailable",
+      "note": "kb/raw/trickest/ 为空，未做快照",
+      "fetched_at": null
+    },
+    "vulhub": {
+      "status": "ok",
+      "note": "253",
+      "fetched_at": null
+    },
+    "hacktricks": {
+      "status": "unavailable",
+      "note": "CC BY-NC 受限，需人工确认再分发范围",
+      "fetched_at": null
+    },
+    "payloads": {
+      "status": "ok",
+      "note": "6",
+      "fetched_at": null
+    },
+    "internalallthethings": {
+      "status": "unavailable",
+      "note": "仓库已迁移且未声明 license，需复核",
+      "fetched_at": null
+    },
+    "xianzhi": {
+      "status": "unavailable",
+      "note": "无稳定公开 API，只能授权导出",
+      "fetched_at": null
+    },
+    "knowledges": {
+      "status": "unavailable-local",
+      "note": "kb/raw/knowledges/ 为空（原路径 C:\\Users\\30209\\...\\knowledges 本机不存在）",
+      "fetched_at": null
+    },
+    "verified-cards": {
+      "status": "unavailable",
+      "note": "需实验侧导出 verified 卡",
+      "fetched_at": null
+    },
+    "nvd-2023": {
+      "status": "ok",
+      "license": "public-domain-us-gov",
+      "redistribute": true,
+      "fetched_at": "2026-11-13T12:24:31+08:00",
+      "note": ""
+    }
+  },
+  "index": {
+    "built_at": "2026-11-13T14:26:07+08:00",
+    "db": "kb/index.db",
+    "cards_loaded": 19970,
+    "cards_indexed": 19970,
+    "cards_rejected": 0,
+    "downgraded": 0,
+    "reasons": {}
+  },
+  "pipeline": {
+    "drafts": 388076,
+    "merged_cves_before_policy": 361140,
+    "merged_cves": 20000,
+    "retention_policy": {
+      "min_epss": 0.045,
+      "keep_years": 10,
+      "target_cards": 20000
+    },
+    "cards_written": 19959,
+    "artifacts_materialized": 4003,
+    "rejected_before_publish": {
+      "secret:inline-password": 48,
+      "secret:bearer-token": 10,
+      "secret:private-key": 2
+    },
+    "cards_preserved_curated": 11,
+    "index": {
+      "total": 19970,
+      "indexed": 19970,
+      "rejected": 0,
+      "downgraded": 0,
+      "reasons": {}
+    },
+    "quality_notes": {
+      "github-poc": "仅元数据卡标记为 unverified；仓库清单落 artifacts/<CVE>/github-poc-index.txt，不伪造可执行步骤",
+      "metasploit": "module 路径写入 poc_code，不复制 Ruby 源码，不伪造 artifacts"
+    }
+  }
+}
